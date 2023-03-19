@@ -1,43 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="description" content="3d, photo, gallery, advanced, javascript" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <link rel="stylesheet" href="./css/app.css" />
+    <link rel="stylesheet" href="./css/site.css" />
+    <link rel="stylesheet" href="./css/video-js.css" />
+    <link rel="stylesheet" href="./css/py3d.min.css" />
+    <title>3D Pyramid Gallery - Basic</title>
+    <script src="./js/video.min.js"></script>
+    <script src="./js/three.min.js"></script>
+    <script src="./js/anime.min.js"></script>
+    <script src="./js/py3d.min.js"></script>
   </head>
+
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    <!-- Main -->
+    <div id="wrapper">
+      <!-- Start gallery-->
+      <div class="rs-container">
+        <div class="rs-py3d">
+          <!-- Portrait-->
+          <ul data-name="Portrait Gallery" id="listData">
+            <!-- <li> <a href="assets/portrait/1.jpg" title="Item 1" data-extended="assets/portrait/extended/1.jpg" data-type="photo" data-thumbnail="assets/portrait/thumbs/1.jpg">Item 1</a>
+              <p>"Never contract friendship with a man that is not better than thyself." - <em>Confucius</em></p>
+            </li> -->
+          </ul>
+        </div>
+      </div>
+      <!-- end gallery-->
+    </div>
+    <!-- end main wrapper-->
+    <script type="text/javascript">
+      let getParamValue = function () {
+        var url = window.location.search.substring(1); //get rid of "?" in querystring
+        var qArray = url.split("&"); //get key-value pairs
+        let result = {};
+        for (var i = 0; i < qArray.length; i++) {
+          var pArr = qArray[i].split("="); //split key and value
+          result[pArr[0]] = pArr[1];
+        }
+        return result;
+      };
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+      document.body.onload = function () {
+        const parseData = getParamValue();
+        parseData.param = JSON.parse(`"${parseData.param.replaceAll("%22", '\\"')}"`);
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+        $.ajax({
+          type: "POST",
+          url: parseData.url,
+          data: parseData.param,
+          headers: { "Content-Type": "application/json" },
+          success: function (res, status) {
+            if (res.code === 0) {
+              let result = [];
+              for (var i = 0; i < res.data.length; i++) {
+                const nft = res.data[i];
+                // result.push({ image: `${parseData.upload}${nft.logoURL}`, description: nft.description });
+
+                $("#listData").append(`
+                  <li>
+                    <a href="${parseData.upload}${nft.logoURL}" title="${nft.description}" data-extended="${parseData.upload}${nft.logoURL}" data-type="photo" data-thumbnail="${parseData.upload}${nft.logoURL}">${nft.description}</a>
+                    <p>"${nft.description}"</p>
+                  </li>
+                `);
+              }
+
+              var el = document.querySelector(".rs-py3d");
+              var py3d = new PyramidGallery(el, {
+                containerZ: -2500,
+                backImage: "./assets/back.png",
+                extrudeRotation: false,
+                boxThickness: 24,
+                level: 8,
+                categoryMenu: {
+                  horizontal: true,
+                },
+              });
+
+              window.py3d = py3d;
+            } else {
+              alert("View load error");
+            }
+          },
+          error: function (data, status) {
+            alert(JSON.stringify(data));
+          },
+        });
+      };
+    </script>
   </body>
 </html>
